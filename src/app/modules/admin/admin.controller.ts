@@ -28,13 +28,13 @@ const getAdminByIdFromDB = async (req: Request, res: Response) => {
   console.log(req.params.id);
   try {
     const result = await adminService.getAdminByIdFromDB(req.params.id);
-    res.status(200).send({
+    res.status(200).json({
       success: true,
       message: "Admin data fetched",
       data: result,
     });
   } catch (error) {
-    res.status(200).send({
+    res.status(500).json({
       success: false,
       message: error?.name || "Admin data failed to fetch",
     });
@@ -45,15 +45,33 @@ const updateAdminIntoDB = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const result = await adminService.updateAdminIntoDB(id, req.body);
-    res.status(200).send({
+    res.status(200).json({
       success: true,
       message: "Admin data fetched",
       data: result,
     });
   } catch (error) {
-    res.status(200).send({
+    res.status(404).json({
       success: false,
-      message: error?.name || "Admin data failed to update",
+      message: error?.message || "Admin data failed to update",
+    });
+  }
+};
+
+const deleteAdminFromDB = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const result = await adminService.deleteAdminFromDB(id);
+    res.status(200).json({
+      success: true,
+      message: "Admin deleted successfully",
+      data: result,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err?.name || "Something went wrong",
+      error: err,
     });
   }
 };
@@ -61,5 +79,6 @@ const updateAdminIntoDB = async (req: Request, res: Response) => {
 export const adminController = {
   getAllAdminFromDB,
   getAdminByIdFromDB,
-  updateAdminIntoDB
+  updateAdminIntoDB,
+  deleteAdminFromDB,
 };
