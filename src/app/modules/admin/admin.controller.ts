@@ -1,78 +1,106 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { adminService } from "./admin.services";
 import pick from "../../../shared/pick";
 import { adminFilterableField } from "./admin.constant";
+import sendResponse from "../../../utils/sendResponse";
+import httpStatus from "http-status";
 
-const getAllAdminFromDB = async (req: Request, res: Response) => {
+const getAllAdminFromDB = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const filters = pick(req.query, adminFilterableField);
     const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
     console.log(options);
     const result = await adminService.getAllAdminFromDB(filters, options);
-    res.status(200).send({
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
       success: true,
       message: "Admin data fetched",
-      meta: result?.meta,
-      data: result?.data,
+      meta: result.meta,
+      data: result.data,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error?.name || "Something went wrong",
-      error: error,
-    });
+    next(error);
   }
 };
 
-const getAdminByIdFromDB = async (req: Request, res: Response) => {
+const getAdminByIdFromDB = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   console.log(req.params.id);
   try {
     const result = await adminService.getAdminByIdFromDB(req.params.id);
-    res.status(200).json({
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
       success: true,
       message: "Admin data fetched",
       data: result,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error?.name || "Admin data failed to fetch",
-    });
+    next(error);
   }
 };
 
-const updateAdminIntoDB = async (req: Request, res: Response) => {
+const updateAdminIntoDB = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { id } = req.params;
   try {
     const result = await adminService.updateAdminIntoDB(id, req.body);
-    res.status(200).json({
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
       success: true,
-      message: "Admin data fetched",
+      message: "Admin data updated successfully",
       data: result,
     });
   } catch (error) {
-    res.status(404).json({
-      success: false,
-      message: error?.message || "Admin data failed to update",
-    });
+    next(error);
   }
 };
 
-const deleteAdminFromDB = async (req: Request, res: Response) => {
+const deleteAdminFromDB = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { id } = req.params;
   try {
     const result = await adminService.deleteAdminFromDB(id);
-    res.status(200).json({
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
       success: true,
       message: "Admin deleted successfully",
       data: result,
     });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err?.name || "Something went wrong",
-      error: err,
+    next(err);
+  }
+};
+
+const softDeleteAdminFromDB = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { id } = req.params;
+  try {
+    const result = await adminService.softDeleteAdminFromDB(id);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Admin deleted successfully",
+      data: result,
     });
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -81,4 +109,5 @@ export const adminController = {
   getAdminByIdFromDB,
   updateAdminIntoDB,
   deleteAdminFromDB,
+  softDeleteAdminFromDB,
 };
