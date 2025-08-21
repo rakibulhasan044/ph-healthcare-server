@@ -2,8 +2,10 @@ import { Admin, Prisma, UserStatus } from "@prisma/client";
 import { adminSearchableFields } from "./admin.constant";
 import calculatePagination from "../../../utils/paginationHelper";
 import prisma from "../../../shared/prisma";
+import { IAdminFilterRequest } from "./admin.interface";
+import { IPaginationOptions } from "../../interface/pagination";
 
-const getAllAdminFromDB = async (params: any, options: any) => {
+const getAllAdminFromDB = async (params: IAdminFilterRequest, options: IPaginationOptions) => {
   const { limit, page, skip } = calculatePagination(options);
   const { searchTerm, ...filterData } = params;
   const andConditions: Prisma.AdminWhereInput[] = [];
@@ -23,7 +25,7 @@ const getAllAdminFromDB = async (params: any, options: any) => {
     andConditions.push({
       AND: Object.keys(filterData).map((key) => ({
         [key]: {
-          equals: filterData[key],
+          equals: (filterData as any)[key],
         },
       })),
     });
@@ -75,25 +77,28 @@ const updateAdminIntoDB = async (
   id: string,
   data: Partial<Admin>
 ): Promise<Admin> => {
-  try {
-    await prisma.admin.findUniqueOrThrow({
-      where: { id },
-    });
+  // try {
+  await prisma.admin.findUniqueOrThrow({
+    where: {
+      id,
+      isDeleted: false,
+    },
+  });
 
-    const result = await prisma.admin.update({
-      where: {
-        id,
-        isDeleted: false,
-      },
-      data,
-    });
-    return result;
-  } catch (error: any) {
-    if (error.code === "P2025") {
-      throw new Error("Admin not found");
-    }
-    throw error;
-  }
+  const result = await prisma.admin.update({
+    where: {
+      id,
+      isDeleted: false,
+    },
+    data,
+  });
+  return result;
+  // } catch (error: any) {
+  //   if (error.code === "P2025") {
+  //     throw new Error("Admin not found");
+  //   }
+  //   throw error;
+  // }
 };
 
 const deleteAdminFromDB = async (id: string): Promise<Admin | null> => {
