@@ -1,13 +1,14 @@
 import prisma from "../../../shared/prisma";
 import * as bcrypt from "bcrypt";
-import e from "express";
-import jwt from "jsonwebtoken";
-import { email } from "zod";
+import generateToken from "../../../utils/jwtHelper";
+import verifyToken from "../../../utils/verifyToken";
+import { UserStatus } from "@prisma/client";
 
 const loginUser = async (payload: { email: string; password: string }) => {
   const userData = await prisma.user.findUniqueOrThrow({
     where: {
       email: payload.email,
+      status: UserStatus.ACTIVE
     },
   });
 
@@ -20,16 +21,53 @@ const loginUser = async (payload: { email: string; password: string }) => {
     throw new Error("Password is incorrect");
   }
 
-  const accessToken = jwt.sign(
+  const accessToken = generateToken(
     {
       email: userData.email,
       role: userData.role,
     },
     "abcdefg",
+    "5m"
+  );
+
+  const refreshToken = generateToken(
     {
-      algorithm: "HS256",
-      expiresIn: "15m",
-    }
+      email: userData.email,
+      role: userData.role,
+    },
+    "abcdefghi",
+    "30d"
+  );
+
+  return {
+    accessToken,
+    refreshToken,
+    needPasswordChange: userData.needPasswordChange,
+  };
+};
+
+const refreshToken = async (token: string) => {
+  let decodedData;
+  try {
+    decodedData = verifyToken(token, "abcdefghi");
+  } catch (error) {
+    throw new Error("you are not authorized");
+  }
+
+  const userData = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: decodedData?.email,
+      status: UserStatus.ACTIVE
+    },
+  });
+
+  const accessToken = generateToken(
+    {
+      email: userData.email,
+      role: userData.role,
+    },
+    "abcdefg",
+    "5m"
   );
 
   return {
@@ -40,4 +78,5 @@ const loginUser = async (payload: { email: string; password: string }) => {
 
 export const authServices = {
   loginUser,
+  refreshToken,
 };

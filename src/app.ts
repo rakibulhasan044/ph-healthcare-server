@@ -3,10 +3,11 @@ import cors from "cors";
 import router from "./app/routes";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import httpStatus from "http-status";
-import { error } from "console";
+import cookieParser from "cookie-parser";
 
 const app: Application = express();
 app.use(cors());
+app.use(cookieParser());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -28,7 +29,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     message: "API not found",
     error: {
       path: req.originalUrl,
-      message: "Your requested API not found"
+      message: "Your requested API not found",
     },
   });
 });
